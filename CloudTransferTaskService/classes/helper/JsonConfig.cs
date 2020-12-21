@@ -19,18 +19,47 @@ namespace CloudTransferTask.src.classes.helper {
     /// </summary>
     class Jobs {
         public string Name = "ExampleJobToCloud";
-        public bool EnableBackgroundService = false;
         public string Source = "YourDirectory";
         public string Destination = "CloudDrive:BackupLocation";
         public string Action = "copy";
         public List<string> FileType = new List<string>() { "*.png", "*.jpg" };
-        public List<string> Flags = new List<string>() { 
+        public List<string> Flags = new List<string>() {
             "-v",
             "--retries 5",
             "--transfers 6"
         };
+        public Service Service = new Service();
         public Actions PreAction = new Actions();
         public Actions PostAction = new Actions();
+    }
+
+
+    /// <summary>
+    /// Settings for the background service
+    /// </summary>
+    class Service {
+        public bool EnableBackgroundService = false;
+        public bool MonitorSubdriectories = false;
+        public string FileFilter = "*.*";
+        public List<string> IgnoreFileFilter = new List<string>() { "*.tmp", "*.temp" };
+        public List<string> NotifyFilter = new List<string>() { 
+            "LastWrite",
+            "FileName",
+            "Size",
+            "DirectoryName"
+        };
+        public EventListener EventListeners = new EventListener();
+    }
+
+
+    /// <summary>
+    /// Settings for the background service event listeners
+    /// </summary>
+    class EventListener {
+        public bool TrackFileCreations = true;
+        public bool TrackFileRenamings = true;
+        public bool TrackFileModifications = true;
+        public bool TrackFileDeletions = true;
     }
 
 

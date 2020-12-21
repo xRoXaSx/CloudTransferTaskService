@@ -33,14 +33,20 @@ namespace CloudTransferTaskService {
                     case "win":
                         var ctl = ServiceController.GetServices().FirstOrDefault(s => s.ServiceName == "CloudTransferTask");
                         if (ctl == null) {
-                            _logger.LogInformation("Service is not installed! Installing...");
-                            Program.InstallService();
-                            _hostApplicationLifetime.StopApplication();
-                            _logger.LogInformation("Stopping local service...");
+                            InstallSvc(_logger, _hostApplicationLifetime);
                         }
 
                         break;
                     case "lin":
+                        if (!Directory.Exists(Json.serviceInstallPathLnx)) {
+                            Directory.CreateDirectory(Json.serviceInstallPathLnx);
+                        }
+
+                        if (!File.Exists(Json.serviceInstallPathLnx + Path.DirectorySeparatorChar + Json.serviceInstallFileNameLnx)) {
+                            FileLogger.Debug("Service cannot be found! Creating...");
+                            InstallSvc(_logger, _hostApplicationLifetime);
+                        }
+
                         break;
                 }
 
@@ -53,6 +59,14 @@ namespace CloudTransferTaskService {
             } catch (Exception e) {
                 FileLogger.Error(e.ToString());
             }
+        }
+
+
+        private static void InstallSvc(ILogger<Worker> _logger, IHostApplicationLifetime _hostApplicationLifetime) {
+            _logger.LogInformation("Service is not installed! Installing...");
+            Program.InstallService();
+            _logger.LogInformation("Stopping local service...");
+            _hostApplicationLifetime.StopApplication();
         }
 
 

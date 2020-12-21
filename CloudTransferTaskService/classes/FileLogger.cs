@@ -67,7 +67,7 @@ namespace CloudTransferTask.src.classes {
         /// Write highlighted to console
         /// </summary>
         /// <param name="logString">Non-highlighted text</param>
-        public static void WriteToFile(string logString) {
+        public static async void WriteToFile(string logString) {
             try {
                 if (!string.IsNullOrEmpty(Program.logLocation)) {
                     if (Json.loggingEnabled) {
@@ -81,15 +81,40 @@ namespace CloudTransferTask.src.classes {
                                 if (!Directory.Exists(Program.logLocation)) {
                                     Directory.CreateDirectory(Program.logLocation);
                                 }
-                            } catch {
+                            } catch { }
 
-                            }
+                            var logFileLocation = Program.logLocation + DateTime.Now.ToString("yyyy-MM-dd") + logExtension;
+                            var maxTries = 3;
+                            var currentTries = 0;
+                            
+                            await System.Threading.Tasks.Task.Run(() => {
+                                var fileLocked = false;
+                                while ((currentTries < maxTries) && (!fileLocked)) {
+                                    try {
+                                        File.AppendAllText(logFileLocation, "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] " + logString + "\n");
+                                        break;
+                                    } catch {
+                                        fileLocked = true;
+                                        System.Threading.Tasks.Task.Delay(500);
+                                    }
 
-                            File.AppendAllText(Program.logLocation + DateTime.Now.ToString("yyyy-MM-dd") + logExtension, "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] " + logString + "\n");
+                                    currentTries++;
+                                }
+                                    
+                                if (fileLocked) {
+                                    Console.WriteLine("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] " + logString);
+                                }
+
+                            });
+                            
+
+                            //File.AppendAllText(Program.logLocation + DateTime.Now.ToString("yyyy-MM-dd") + logExtension, "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] " + logString + "\n");
                         } catch { }
                     }
                 }
-            } catch { }
+            } catch {
+                Console.WriteLine("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] " + logString);
+            }
         }
 
 
