@@ -29,6 +29,9 @@ namespace CloudTransferTask.src.classes.helper {
                             FileLogger.Debug("   -> " + job.Name);
                             fileSystemWatchers.Add(new FileSysWatcher().Initialize(job));
                         }
+                    } else {
+                        FileLogger.Info("No service enabled jobs! Exiting...");
+                        System.Environment.ExitCode = 1;
                     }
                 }
             }

@@ -51,10 +51,11 @@ namespace CloudTransferTaskService {
                 }
 
                 new FileSysWatcherService().StartService();
-
-                while (!stoppingToken.IsCancellationRequested) {
+                if (Environment.ExitCode == 0) {
+                    //while (!stoppingToken.IsCancellationRequested) {
                     FileLogger.Info("Start completed");
                     await Task.Delay(-1, stoppingToken);
+                    //}
                 }
             } catch (Exception e) {
                 FileLogger.Error(e.ToString());
@@ -71,7 +72,7 @@ namespace CloudTransferTaskService {
 
 
         private void WriteConfig() {
-            if (!Directory.Exists(Json.serviceConfPath) && !string.IsNullOrEmpty(Json.serviceConfPath)) {
+            if (!string.IsNullOrEmpty(Json.serviceConfPath) && !Directory.Exists(Json.serviceConfPath)) {
                 try {
                     Directory.CreateDirectory(Json.serviceConfPath);
                     FileLogger.Info("Config folder has been created " + Json.serviceConfPath);

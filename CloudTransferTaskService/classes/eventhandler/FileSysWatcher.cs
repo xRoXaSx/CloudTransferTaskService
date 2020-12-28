@@ -39,13 +39,11 @@ namespace CloudTransferTask.src.classes.eventhandler {
                 try {
                     fileSystemWatcher.Path = job.Source;
                     fileSystemWatcher.EnableRaisingEvents = true;
-
                     fileSystemWatcher.NotifyFilter = notifyFilters;
-                    fileSystemWatcher.Filter = job.Service.FileFilter;
+                    fileSystemWatcher.Filters.Add(job.Service.FileFilter);
                     fileSystemWatcher.IncludeSubdirectories = job.Service.MonitorSubdriectories;
                     fileSystemWatcher.Error += FileWatcherError;
                     fileSystemWatcher.Disposed += FileWatcherDisposed;
-
 
                     if (job.Service != null && job.Service.EventListeners != null) {
                         if (job.Service.EventListeners.TrackFileCreations) {
@@ -160,13 +158,14 @@ namespace CloudTransferTask.src.classes.eventhandler {
                                     SetCache(hashedCacheElement, DateTime.Now.ToString(), true);
                                     FileLogger.Debug("Added cacheElement to cache...");
                                     foreach (var job in jobList) {
-                                        var ignoreFileFilter = job.Service.IgnoreFileFilter;
-                                        if (FileDoesNotMatchFilter(e.Name, ignoreFileFilter)) {
-                                            FileLogger.Debug("Starting new thread...");
-                                            var thread = new Thread(() => RunCloudTransferTask(hashedCacheElement, job));
-                                            thread.Start();
-                                        } else {
-                                            FileLogger.Debug("File matched IgnoreFileFilter, ignoring it!");
+                                        if (FileDoesNotMatchFilter(e.Name, job.Service.AdvancedFileFilter)) {
+                                            if (FileDoesNotMatchFilter(e.Name, job.Service.IgnoreFileFilter, true)) {
+                                                FileLogger.Debug("Starting new thread...");
+                                                var thread = new Thread(() => RunCloudTransferTask(hashedCacheElement, job));
+                                                thread.Start();
+                                            } else {
+                                                FileLogger.Debug("File matched IgnoreFileFilter, ignoring it!");
+                                            }
                                         }
                                     }
                                 } else {
@@ -176,13 +175,14 @@ namespace CloudTransferTask.src.classes.eventhandler {
                                             if (paresedTimeSpan.AddMilliseconds(threadSleepBeforeRCloneInMs) < DateTime.Now) {
                                                 MemoryCache.Default.Remove(hashedCacheElement);
                                                 foreach (var job in jobList) {
-                                                    var ignoreFileFilter = job.Service.IgnoreFileFilter;
-                                                    if (FileDoesNotMatchFilter(e.Name, ignoreFileFilter)) {
-                                                        FileLogger.Debug("Starting new thread...");
-                                                        var thread = new Thread(() => RunCloudTransferTask(hashedCacheElement, job));
-                                                        thread.Start();
-                                                    } else {
-                                                        FileLogger.Debug("File matched IgnoreFileFilter, ignoring it!");
+                                                    if (FileDoesNotMatchFilter(e.Name, job.Service.AdvancedFileFilter)) {
+                                                        if (FileDoesNotMatchFilter(e.Name, job.Service.IgnoreFileFilter, true)) {
+                                                            FileLogger.Debug("Starting new thread...");
+                                                            var thread = new Thread(() => RunCloudTransferTask(hashedCacheElement, job));
+                                                            thread.Start();
+                                                        } else {
+                                                            FileLogger.Debug("File matched IgnoreFileFilter, ignoring it!");
+                                                        }
                                                     }
                                                 }
                                             } else {
@@ -307,11 +307,15 @@ namespace CloudTransferTask.src.classes.eventhandler {
         /// <param name="input">The string to check</param>
         /// <param name="mask">The mask which should match the input</param>
         /// <returns></returns>
-        private bool FileDoesNotMatchFilter(string input, List<string> mask) {
+        private bool FileDoesNotMatchFilter(string input, List<string> mask, bool invertFileMatch = false) {
             var returnVal = false;
             if (!string.IsNullOrEmpty(input) && (mask.All(x => !string.IsNullOrEmpty(x)))) {
                 List<Regex> masks = mask.Select(x => new Regex(x.Replace(".", "[.]").Replace("*", ".*").Replace("?", "."))).ToList();
-                returnVal = !masks.Any(x => x.IsMatch(input));
+                returnVal = masks.Any(x => x.IsMatch(input));
+
+                if (invertFileMatch) {
+                    returnVal = !returnVal;
+                }
             } else {
                 returnVal = true;
             }
