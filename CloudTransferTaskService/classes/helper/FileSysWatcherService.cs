@@ -42,9 +42,8 @@ namespace CloudTransferTask.src.classes.helper {
 
 
         /// <summary>
-        /// Return the configFullPath of all user
-        /// </summary>
-        /// <param name="userName">The user for which the config should be get</param>
+        /// Return the configFullPath of all users
+        /// </summary> 
         /// <returns></returns>
         public static List<string> GetConfigPathOfAllUsers() {
             var returnVal = new List<string>();

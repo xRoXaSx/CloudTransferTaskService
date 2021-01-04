@@ -41,6 +41,7 @@ namespace CloudTransferTask.src.classes.helper {
         public bool EnableBackgroundService = false;
         public bool MonitorSubdriectories = false;
         public string FileFilter = "*.*";
+        public string DelayTaskAfterLastEvent = "-1";
         public List<string> AdvancedFileFilter = new List<string>() { "*.*" };
         public List<string> IgnoreFileFilter = new List<string>() { "*.tmp", "*.temp" };
         public List<string> NotifyFilter = new List<string>() { 

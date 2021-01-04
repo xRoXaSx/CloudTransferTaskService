@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using CloudTransferTask.src.classes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,7 +13,7 @@ namespace CloudTransferTaskService {
         internal static string logLevel = "";
 
         public static void Main(string[] args) {
-            CreateHostBuilder(args).Build().Run();
+            CreateHostBuilder(args).ConfigureLogging(logging => logging.ClearProviders()).Build().Run();
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) {

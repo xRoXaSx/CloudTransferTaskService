@@ -100,11 +100,6 @@ namespace CloudTransferTask.src.classes {
 
                                     currentTries++;
                                 }
-                                    
-                                if (fileLocked) {
-                                    Console.WriteLine("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] " + logString);
-                                }
-
                             });
                             
 
@@ -112,7 +107,7 @@ namespace CloudTransferTask.src.classes {
                         } catch { }
                     }
                 }
-            } catch {
+            } finally {
                 Console.WriteLine("[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + "] " + logString);
             }
         }
