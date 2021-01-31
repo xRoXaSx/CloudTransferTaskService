@@ -9,7 +9,11 @@ namespace CloudTransferTask.src.classes.helper {
 
     class FileSysWatcherService {
 
+        private static string enumeratePathToDetermineAllUserNames = Path.DirectorySeparatorChar + "home" + Path.DirectorySeparatorChar;
+        private static List<FileSystemWatcher> fileSystemWatchers_;
+
         public void StartService() {
+            var fileSystemWatchers = new List<FileSystemWatcher>();
             FileLogger.Info("Service started...");
             var jobs = new List<Jobs>();
             var confDirs = GetConfigPathOfAllUsers();
@@ -19,22 +23,27 @@ namespace CloudTransferTask.src.classes.helper {
                     FileLogger.Debug("Configdir and config do exist!");
                     var jobList = Json.GetJobListFromEnabledService(usersConfigFile, true);
                     if (jobList.Count > 0) {
-                        FileSysWatcher.SetCache("","");
+                        //FileSysWatcher.SetCache("","");
                         FileLogger.Debug("Service enabled jobs: ");
                         foreach (var job in jobList) {
                             FileLogger.Debug("   -> " + job.Name);
-                            new FileSysWatcher().Initialize(job.Source);
+                            fileSystemWatchers.Add(new FileSysWatcher().Initialize(job));
                         }
+                    } else {
+                        FileLogger.Info("No service enabled jobs! Exiting...");
+                        System.Environment.ExitCode = 1;
                     }
                 }
             }
+
+            fileSystemWatchers_ = fileSystemWatchers;
+            FileLogger.Debug("Added " + fileSystemWatchers_.Count + " FileSystemWatchers!");
         }
 
 
         /// <summary>
-        /// Return the configFullPath of all user
-        /// </summary>
-        /// <param name="userName">The user for which the config should be get</param>
+        /// Return the configFullPath of all users
+        /// </summary> 
         /// <returns></returns>
         public static List<string> GetConfigPathOfAllUsers() {
             var returnVal = new List<string>();
@@ -51,7 +60,19 @@ namespace CloudTransferTask.src.classes.helper {
                     break;
                 case "lin":
                 case "fbd":
-                    break;
+                // === Determine users via home directory
+                //foreach (var homeDir in Directory.GetDirectories(enumeratePathToDetermineAllUserNames)) {
+                //    var homeDir_ = new DirectoryInfo(homeDir).Name;
+                //    var confPathLnx = Json.confPathLnx.Replace(System.Environment.UserName, homeDir_);
+                //    returnVal.Add(confPathLnx);
+                    FileLogger.Debug("Service user: " + System.Environment.UserName);
+                    FileLogger.Debug("confPathLnx: " + Json.confPathLnx);
+                    
+                    returnVal.Add(Json.confPathLnx);
+                    FileSysWatcher.SetCache(System.Environment.UserName, Json.confPathLnx);
+                    //}
+
+                break;
                 case "mos":
                     break;
 

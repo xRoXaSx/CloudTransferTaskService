@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using CloudTransferTask.src.classes;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,13 +13,23 @@ namespace CloudTransferTaskService {
         internal static string logLevel = "";
 
         public static void Main(string[] args) {
-            CreateHostBuilder(args).Build().Run();
+            CreateHostBuilder(args).ConfigureLogging(logging => logging.ClearProviders()).Build().Run();
         }
 
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
-            Host.CreateDefaultBuilder(args).UseWindowsService().ConfigureServices((hostContext, services) => {
-                services.AddHostedService<Worker>();
-            });
+        public static IHostBuilder CreateHostBuilder(string[] args) {
+            switch (os) {
+                case "win":
+                    return Host.CreateDefaultBuilder(args).UseWindowsService().ConfigureServices((hostContext, services) => {
+                        services.AddHostedService<Worker>();
+                    });
+
+                default:
+                    return Host.CreateDefaultBuilder(args).UseSystemd().ConfigureServices((hostContext, services) => {
+                        services.AddHostedService<Worker>();
+                    });
+
+            }
+        }
 
 
         public static bool InstallService() {
@@ -33,15 +44,24 @@ namespace CloudTransferTaskService {
                         startInfo.FileName = "cmd.exe";
                         break;
                     case "lin":
-                        if (Directory.Exists("/etc/systemd/system")) {
-                            File.WriteAllText("/etc/systemd/system/cloudtransfertask.service",
-                                "[Unit]" + Environment.NewLine + "Description=" + serviceDescription + Environment.NewLine + Environment.NewLine + 
-                                "[Service]" + Environment.NewLine + "Type=notify" + Environment.NewLine + "ExecStart=" + binaryPath + Environment.NewLine + Environment.NewLine +
-                                "[Install]" + Environment.NewLine + "WantedBy=multi-user.target" + Environment.NewLine
-                            );
-                        } else {
-                            Console.WriteLine("ERROR: Cannot find directory \"/etc/systemd/system\"!");
+                        //if (Directory.Exists("/etc/systemd/system")) {
+                        if (!Directory.Exists(Json.serviceConfPathLnx)) {
+                            FileLogger.Notice("Cannot find directory \"" + Json.serviceConfPathLnx + "\"! Creating it...");
+                            
+                            try {
+                                Directory.CreateDirectory(Json.serviceConfPathLnx);
+                            } catch {
+                                FileLogger.Error("Cannot create the directory \"" + Json.serviceConfPathLnx + "\"!");
+                                Environment.Exit(1);
+                            }
                         }
+
+                        File.WriteAllText(Json.serviceInstallFullPathLnx,
+                            "[Unit]" + Environment.NewLine + "Description=" + serviceDescription + Environment.NewLine + Environment.NewLine + 
+                            "[Service]" + Environment.NewLine + "Type=notify" + Environment.NewLine + "ExecStart=" + binaryPath + Environment.NewLine + Environment.NewLine +
+                            "[Install]" + Environment.NewLine + "WantedBy=default.target" + Environment.NewLine
+                        );
+
                         startInfo.FileName = "/bin/bash";
                         break;
                 }

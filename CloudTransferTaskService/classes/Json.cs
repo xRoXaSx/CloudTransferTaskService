@@ -20,17 +20,21 @@ namespace CloudTransferTask.src.classes {
         public static string confFileName = "config.json";
         public static string folderNameCap = "CloudTransferTasks";
         public static string folderNameNoCap = "cloudtransfertasks";
-        private static string confPathLnx = Path.DirectorySeparatorChar + "home" + Path.DirectorySeparatorChar + Environment.UserName + Path.DirectorySeparatorChar + ".config" + Path.DirectorySeparatorChar;
+        public static string confPathLnx = Path.DirectorySeparatorChar + "home" + Path.DirectorySeparatorChar + Environment.UserName + Path.DirectorySeparatorChar + ".config" + Path.DirectorySeparatorChar;
         private static string confPathOsx = "~" + Path.DirectorySeparatorChar + "Library" + Path.DirectorySeparatorChar + "Application Support";
         public static string confPathWin = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + Path.DirectorySeparatorChar;
 
         // === CloudTransferTaskService config.json locations
         public static string serviceConfPath = "";
         public static string serviceConfFullPath = "";
+        public static string serviceInstallFullPathLnx = "";
         public static string serviceConfFileName = "config.json";
         public static string serviceFolderNameCap = "CloudTransferTasks";
         public static string serviceFolderNameNoCap = "cloudtransfertasks";
-        private static string serviceConfPathLnx = Path.DirectorySeparatorChar + "etc" + Path.DirectorySeparatorChar + serviceFolderNameNoCap + Path.DirectorySeparatorChar;
+        public static string serviceInstallFileNameLnx = serviceFolderNameNoCap + ".service";
+        public static string serviceConfPathLnx = Path.DirectorySeparatorChar + "etc" + Path.DirectorySeparatorChar + serviceFolderNameNoCap;
+        public static string serviceInstallPathLnx = Path.DirectorySeparatorChar + "home" + Path.DirectorySeparatorChar + Environment.UserName + Path.DirectorySeparatorChar + ".local" +
+            Path.DirectorySeparatorChar + "share" + Path.DirectorySeparatorChar + "systemd" + Path.DirectorySeparatorChar + "user";
         private static string serviceConfPathOsx = "~" + Path.DirectorySeparatorChar + "Library" + Path.DirectorySeparatorChar + "Application Support";
         public static string serviceConfPathWin = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
 
@@ -46,8 +50,8 @@ namespace CloudTransferTask.src.classes {
                 os = "win";
             } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
                 os = "lin";
-            } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
-                os = "mox";
+            } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+                os = "osx";
             } else if (RuntimeInformation.IsOSPlatform(OSPlatform.FreeBSD)) {
                 os = "fbd";
             }
@@ -85,12 +89,12 @@ namespace CloudTransferTask.src.classes {
                 case "fbd":
                     confPathLnx += folderNameNoCap;
                     confPath = confPathLnx;
-                    
 
-                    serviceConfPathLnx += Path.DirectorySeparatorChar + serviceFolderNameNoCap;
+                    //serviceConfPathLnx += Path.DirectorySeparatorChar + serviceFolderNameNoCap;
                     serviceConfPath = serviceConfPathLnx;
+                    serviceInstallFullPathLnx = serviceInstallPathLnx + Path.DirectorySeparatorChar + serviceInstallFileNameLnx;
                     break;
-                case "mox":
+                case "osx":
                     confPathOsx += folderNameCap;
                     confPath = confPathOsx;
 
@@ -152,7 +156,7 @@ namespace CloudTransferTask.src.classes {
                 string json = File.ReadAllText(configFilePath);
                 var serializerSettings = new JsonSerializerSettings() { ObjectCreationHandling = ObjectCreationHandling.Replace };
                 var deserializedJson = JsonConvert.DeserializeObject<JsonConfig>(json, serializerSettings);
-                jobs = deserializedJson.Jobs.Where(x => x.EnableBackgroundService).ToList();
+                jobs = deserializedJson.Jobs.Where(x => x.Service != null && x.Service.EnableBackgroundService).ToList();
                 if (jobs.Count > 0) {
                     FileLogger.Info("Found " + jobs.Count + " task(s) with enabled option \"EnableBackgroundService\"");
                     if (enableCaching) {

@@ -33,22 +33,29 @@ namespace CloudTransferTaskService {
                     case "win":
                         var ctl = ServiceController.GetServices().FirstOrDefault(s => s.ServiceName == "CloudTransferTask");
                         if (ctl == null) {
-                            _logger.LogInformation("Service is not installed! Installing...");
-                            Program.InstallService();
-                            _hostApplicationLifetime.StopApplication();
-                            _logger.LogInformation("Stopping local service...");
+                            InstallSvc(_logger, _hostApplicationLifetime);
                         }
 
                         break;
                     case "lin":
+                        if (!Directory.Exists(Json.serviceInstallPathLnx)) {
+                            Directory.CreateDirectory(Json.serviceInstallPathLnx);
+                        }
+
+                        if (!File.Exists(Json.serviceInstallPathLnx + Path.DirectorySeparatorChar + Json.serviceInstallFileNameLnx)) {
+                            FileLogger.Debug("Service cannot be found! Creating...");
+                            InstallSvc(_logger, _hostApplicationLifetime);
+                        }
+
                         break;
                 }
 
                 new FileSysWatcherService().StartService();
-
-                while (!stoppingToken.IsCancellationRequested) {
+                if (Environment.ExitCode == 0) {
+                    //while (!stoppingToken.IsCancellationRequested) {
                     FileLogger.Info("Start completed");
                     await Task.Delay(-1, stoppingToken);
+                    //}
                 }
             } catch (Exception e) {
                 FileLogger.Error(e.ToString());
@@ -56,8 +63,16 @@ namespace CloudTransferTaskService {
         }
 
 
+        private static void InstallSvc(ILogger<Worker> _logger, IHostApplicationLifetime _hostApplicationLifetime) {
+            _logger.LogInformation("Service is not installed! Installing...");
+            Program.InstallService();
+            _logger.LogInformation("Stopping local service...");
+            _hostApplicationLifetime.StopApplication();
+        }
+
+
         private void WriteConfig() {
-            if (!Directory.Exists(Json.serviceConfPath) && !string.IsNullOrEmpty(Json.serviceConfPath)) {
+            if (!string.IsNullOrEmpty(Json.serviceConfPath) && !Directory.Exists(Json.serviceConfPath)) {
                 try {
                     Directory.CreateDirectory(Json.serviceConfPath);
                     FileLogger.Info("Config folder has been created " + Json.serviceConfPath);
